@@ -190,70 +190,40 @@ fn continuous_collision_detection(
         let relative_position = previous_position_1.0.sub(previous_position_2.0);
         let relative_velocity = velocity_1.0.sub(velocity_2.0);
 
+        //quadratic equation
         let a = relative_velocity.dot(relative_velocity);
         let b = 2.0 * relative_position.dot(relative_velocity);
         let c = relative_position.dot(relative_position) - ((radius_1.0 + radius_2.0) * (radius_1.0 + radius_2.0));
-
         let discriminant = (b * b) - (4.0 * a * c);
         if discriminant < 0.0 { continue; }
 
         let discriminant_sqrt = discriminant.sqrt();
         let t_a = (-b + discriminant_sqrt) / (2.0 * a);
         let t_b = (-b - discriminant_sqrt) / (2.0 * a);
-
-        println!("t_a: {t_a}, t_b: {t_b}");
-        println!("before: prev_pos_1 {previous_position_1:?} prev_pos_2 {previous_position_2:?}");
-
-
-
         let t_collision = t_a.min(t_b);
-        // if t_a > 0.0 && t_b < 0.0 { t_collision = t_a; }
-        // else if t_a < 0.0 && t_b > 0.0 { t_collision = t_b; }
-        // else if t_a < 0.0 && t_b < 0.0 { continue; }
-        // else { t_collision = t_a.min(t_b); }
-        if t_collision.abs() <= DELTA_TIME { println!("collision!") } else { continue; }
+        if t_collision.is_nan() || t_collision.abs() > DELTA_TIME { continue; }
 
         //resolve
 
         //track to point of collision
-        // println!("before: prev_pos_1 {previous_position_1:?} prev_pos_2 {previous_position_2:?}");
-        print_transform_translations("before", &mut transform_1, &mut transform_2);
         transform_1.translation = previous_position_1.0.add(velocity_1.0.mul(t_collision)).extend(0.0);
         transform_2.translation = previous_position_2.0.add(velocity_2.0.mul(t_collision)).extend(0.0);
-        print_transform_translations("after", &mut transform_1, &mut transform_2);
-
-        if previous_position_1.x.abs() < transform_1.translation.x.abs() { println!("fudge"); }
 
         //get new velocities
         let position_difference = transform_1.translation.sub(transform_2.translation).truncate();
         let position_difference_squared_distance = position_difference.length_squared();
-        let stuff = position_difference_squared_distance.sqrt();
-        println!("dist: {stuff}");
-
         let velocity_difference = velocity_1.0.sub(velocity_2.0);
         let total_mass = mass_1.0 + mass_2.0;
 
         let velocity_1_response_magnitude = (2.0 * mass_2.0 * velocity_difference.dot(position_difference)) / (total_mass * position_difference_squared_distance);
         let velocity_2_response_magnitude = (2.0 * mass_1.0 * (-velocity_difference).dot(-position_difference)) / (total_mass * position_difference_squared_distance);
 
-        println!("before: velocity_1 {velocity_1:?} velocity_2 {velocity_2:?}");
         velocity_1.sub_assign(position_difference.mul(velocity_1_response_magnitude));
         velocity_2.sub_assign((-position_difference).mul(velocity_2_response_magnitude));
-        println!("after: velocity_1 {velocity_1:?} velocity_2 {velocity_2:?}");
-
 
         //move forward for rest of time step
         let t_remaining = DELTA_TIME - t_collision;
-        println!("{t_remaining}");
         transform_1.translation.add_assign(velocity_1.0.mul(t_remaining).extend(0.0));
         transform_2.translation.add_assign(velocity_2.0.mul(t_remaining).extend(0.0));
-        print_transform_translations("final", &mut transform_1, &mut transform_2);
-
     }
-}
-
-fn print_transform_translations(when: &str, transform_1: &mut Mut<Transform>, transform_2: &mut Mut<Transform>) {
-    let t_1 = transform_1.translation;
-    let t_2 = transform_2.translation;
-    println!("{when}: transform_1 {t_1:?} transform_2 {t_2:?}");
 }
