@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 
 const BACKGROUND_COLOR: Color = Color::BLACK;
-const DELTA_TIME: f32 = 0.001;
+const DELTA_TIME: f32 = 0.02;
 const GRAVITATIONAL_CONSTANT: f32 = 100000.0; //does this matter?
 // const MAX_ACCELERATION: f32 = 5000.0;
 const MIN_DISTANCE: f32 = 300.0;
@@ -16,6 +16,7 @@ fn main() {
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, (
+            new_line,
             first_half_step_velocity,
             continuous_collision_detection,
             calculate_gravitational_force,
@@ -75,14 +76,19 @@ fn setup(
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(200.0, 0.0, 0.0), Vec2::splat(40.0), Vec2::new(0.0, 100.0));
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-200.0, 0.0, 0.0), Vec2::splat(40.0), Vec2::new(0.0, -100.0));
 
-    //colliding two body
-    spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
-    spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
+    //colliding two body next to each other
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
+
+    //colliding two body far away
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
+
 
     //three body
-    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(250.0, 50.0, 0.0), 20.0, Vec2::ZERO, Color::WHITE);
-    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-200.0, 150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(1.0, 0.5, 0.1));
-    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-150.0, -150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(0.0, 1.0, 0.1));
+    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(250.0, 50.0, 0.0), 20.0, Vec2::ZERO, Color::WHITE);
+    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-200.0, 150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(1.0, 0.5, 0.1));
+    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-150.0, -150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(0.0, 1.0, 0.1));
 }
 
 fn spawn_body(commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, mass: f32, transform: Transform, radius: f32, initial_velocity: Vec2, color: Color) {
@@ -103,6 +109,8 @@ fn spawn_body(commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materi
     ));
 }
 
+fn new_line() { println!(); }
+
 fn calculate_gravitational_force(mut query: Query<(&mut Force, &Transform, &Mass), With<Body>>) {
     for (mut force, _, _) in &mut query { force.0 = Vec2::ZERO; }
 
@@ -116,7 +124,7 @@ fn calculate_gravitational_force(mut query: Query<(&mut Force, &Transform, &Mass
         let gravitational_force = displacement.mul(force_magnitude);
         force.add_assign(gravitational_force);
         other_force.sub_assign(gravitational_force);
-        println!("f1: {force:?}, f2: {other_force:?}");
+        // println!("f1: {force:?}, f2: {other_force:?}");
     }
 }
 
@@ -136,6 +144,7 @@ fn first_half_step_velocity(mut query: Query<(&mut Transform, &mut PreviousPosit
                 .add(acceleration.current.mul(0.5 * DELTA_TIME * DELTA_TIME))
                 .extend(0.0)
         );
+
     }
 }
 
@@ -168,12 +177,12 @@ fn update_center_of_mass(
 }
 
 fn continuous_collision_detection(
-    mut query: Query<(&Radius, &Mass, &PreviousPosition, &mut Transform, &mut Velocity, &mut Acceleration), With<Body>>
+    mut query: Query<(&Radius, &Mass, &PreviousPosition, &mut Transform, &mut Velocity), With<Body>>
 ) {
     let mut iter = query.iter_combinations_mut();
     while let Some([
-                   (radius_1, mass_1, previous_position_1, mut transform_1, mut velocity_1, mut acc_1),
-                   (radius_2, mass_2, previous_position_2, mut transform_2, mut velocity_2, mut acc_2)
+                   (radius_1, mass_1, previous_position_1, mut transform_1, mut velocity_1),
+                   (radius_2, mass_2, previous_position_2, mut transform_2, mut velocity_2)
                    ]) =
         iter.fetch_next()
     {
@@ -192,29 +201,35 @@ fn continuous_collision_detection(
         let t_a = (-b + discriminant_sqrt) / (2.0 * a);
         let t_b = (-b - discriminant_sqrt) / (2.0 * a);
 
-        let t_collision;
-        if t_a > 0.0 && t_b < 0.0 { t_collision = t_a; }
-        else if t_a < 0.0 && t_b > 0.0 { t_collision = t_b; }
-        else if t_a < 0.0 && t_b < 0.0 { continue; }
-        else { t_collision = t_a.min(t_b); }
+        println!("t_a: {t_a}, t_b: {t_b}");
+        println!("before: prev_pos_1 {previous_position_1:?} prev_pos_2 {previous_position_2:?}");
 
-        if t_collision <= DELTA_TIME { println!("collision!") } else { continue; }
+
+
+        let t_collision = t_a.min(t_b);
+        // if t_a > 0.0 && t_b < 0.0 { t_collision = t_a; }
+        // else if t_a < 0.0 && t_b > 0.0 { t_collision = t_b; }
+        // else if t_a < 0.0 && t_b < 0.0 { continue; }
+        // else { t_collision = t_a.min(t_b); }
+        if t_collision.abs() <= DELTA_TIME { println!("collision!") } else { continue; }
 
         //resolve
-        println!("resolving!");
 
         //track to point of collision
-        println!("before: prev_pos_1 {previous_position_1:?} prev_pos_2 {previous_position_2:?}");
+        // println!("before: prev_pos_1 {previous_position_1:?} prev_pos_2 {previous_position_2:?}");
         print_transform_translations("before", &mut transform_1, &mut transform_2);
         transform_1.translation = previous_position_1.0.add(velocity_1.0.mul(t_collision)).extend(0.0);
         transform_2.translation = previous_position_2.0.add(velocity_2.0.mul(t_collision)).extend(0.0);
         print_transform_translations("after", &mut transform_1, &mut transform_2);
+
+        if previous_position_1.x.abs() < transform_1.translation.x.abs() { println!("fudge"); }
 
         //get new velocities
         let position_difference = transform_1.translation.sub(transform_2.translation).truncate();
         let position_difference_squared_distance = position_difference.length_squared();
         let stuff = position_difference_squared_distance.sqrt();
         println!("dist: {stuff}");
+
         let velocity_difference = velocity_1.0.sub(velocity_2.0);
         let total_mass = mass_1.0 + mass_2.0;
 
@@ -232,6 +247,8 @@ fn continuous_collision_detection(
         println!("{t_remaining}");
         transform_1.translation.add_assign(velocity_1.0.mul(t_remaining).extend(0.0));
         transform_2.translation.add_assign(velocity_2.0.mul(t_remaining).extend(0.0));
+        print_transform_translations("final", &mut transform_1, &mut transform_2);
+
     }
 }
 
