@@ -17,7 +17,6 @@ fn main() {
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_systems(Startup, setup)
         .add_systems(FixedUpdate, (
-            new_line,
             first_half_step_velocity,
             continuous_collision_detection,
             calculate_gravitational_force,
@@ -78,17 +77,17 @@ fn setup(
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-200.0, 0.0, 0.0), Vec2::splat(40.0), Vec2::new(0.0, -100.0));
 
     //colliding two body next to each other
-    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
-    // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
+    spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
+    spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-50.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
 
     //colliding two body far away
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
 
     //three body
-    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(250.0, 50.0, 0.0), 20.0, Vec2::ZERO, Color::WHITE);
-    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-200.0, 150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(1.0, 0.5, 0.1));
-    spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-150.0, -150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(0.0, 1.0, 0.1));
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(250.0, 50.0, 0.0), 20.0, Vec2::ZERO, Color::WHITE);
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-200.0, 150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(1.0, 0.5, 0.1));
+    // spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(-150.0, -150.0, 0.0), 20.0, Vec2::ZERO, Color::srgb(0.0, 1.0, 0.1));
 }
 
 fn spawn_body(commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>, mass: f32, transform: Transform, radius: f32, initial_velocity: Vec2, color: Color) {
@@ -108,8 +107,6 @@ fn spawn_body(commands: &mut Commands, meshes: &mut ResMut<Assets<Mesh>>, materi
         PreviousPosition(transform.translation.truncate()),
     ));
 }
-
-fn new_line() { println!(); }
 
 fn calculate_gravitational_force(mut query: Query<(&mut Force, &Transform, &Mass), With<Body>>) {
     for (mut force, _, _) in &mut query { force.0 = Vec2::ZERO; }
@@ -202,6 +199,14 @@ fn continuous_collision_detection(
         let t_b = (-b - discriminant_sqrt) / (2.0 * a);
         let t_collision = t_a.min(t_b);
         if t_collision.is_nan() || t_collision.abs() > DELTA_TIME { continue; }
+
+        if t_collision < 0.0 {
+            println!("strange behaviour");
+            println!("pos_1 {previous_position_1:?} pos_2 {previous_position_2:?}");
+            println!("vel_1 {velocity_1:?} vel_2 {velocity_2:?}");
+            println!("rel_pos {relative_position}");
+            println!("rel_vel {relative_velocity}");
+        }
 
         //resolve
 
