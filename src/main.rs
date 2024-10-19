@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 
 const BACKGROUND_COLOR: Color = Color::BLACK;
-const DELTA_TIME: f32 = 0.02;
+const DELTA_TIME: f32 = 0.0005;
 const GRAVITATIONAL_CONSTANT: f32 = 100000.0; //does this matter?
 // const MAX_ACCELERATION: f32 = 5000.0;
 const MIN_DISTANCE: f32 = 300.0;
@@ -12,6 +12,7 @@ const MIN_DISTANCE: f32 = 300.0;
 
 fn main() {
     App::new()
+        .insert_resource(Time::<Fixed>::from_hz(2000.0))
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_systems(Startup, setup)
@@ -83,7 +84,6 @@ fn setup(
     //colliding two body far away
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::WHITE);
     // spawn_body(&mut commands, &mut meshes, &mut materials, 100.0, Transform::from_xyz(-300.0, 0.0, 0.0), 40.0, Vec2::new(0.0, 0.0), Color::srgb(1.0, 0.5, 0.1));
-
 
     //three body
     spawn_body(&mut commands, &mut meshes, &mut materials, 50.0, Transform::from_xyz(250.0, 50.0, 0.0), 20.0, Vec2::ZERO, Color::WHITE);
