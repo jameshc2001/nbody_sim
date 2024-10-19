@@ -1,5 +1,5 @@
-use std::cmp::max;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign};
+
 use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 
@@ -113,18 +113,6 @@ fn apply_force(mut query: Query<(&mut Acceleration, &Mass, &Force)>) {
     }
 }
 
-fn apply_acceleration(mut query: Query<(&mut Velocity, &Acceleration)>) {
-    for (mut velocity, acceleration) in &mut query {
-        velocity.add_assign(acceleration.current.mul(DELTA_TIME));
-    }
-}
-
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
-    for (mut transform, velocity) in &mut query {
-        transform.translation.add_assign(velocity.mul(DELTA_TIME).extend(0.0));
-    }
-}
-
 fn first_half_step_velocity(mut query: Query<(&mut Transform, &Velocity, &Acceleration)>) {
     for (mut transform, velocity, acceleration) in &mut query {
         transform.translation.add_assign(
@@ -148,13 +136,13 @@ fn final_half_step_velocity(mut query: Query<(&mut Velocity, &Acceleration)>) {
 }
 
 fn update_center_of_mass(
-    mut centre_of_mass_query: Query<(&mut Transform), With<CentreOfMass>>,
+    mut centre_of_mass_query: Query<&mut Transform, With<CentreOfMass>>,
     body_query: Query<(&Transform, &Mass), Without<CentreOfMass>>
 ) {
     let mut centre_of_mass = Vec2::ZERO;
     let mut total_mass: f32 = 0.0;
 
-    for (mut transform, mass) in &body_query {
+    for (transform, mass) in &body_query {
         centre_of_mass.add_assign(transform.translation.truncate().mul(mass.0));
         total_mass += mass.0;
     }
